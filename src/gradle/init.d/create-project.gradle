@@ -24,17 +24,19 @@ junitVersion=4.10
 // Gradle properties
 
 rootProject.ext.GRADLE_SETTINGS = """// Gradle Settings
+
 """
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Single project build file
 
-rootProject.ext.SINGLE_BUILD_GRADLE = """# This is a single project
+rootProject.ext.SINGLE_BUILD_GRADLE = """// This is a single project
+
 apply plugin: 'java'
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 dependencies {
 }
@@ -46,7 +48,7 @@ task wrapper(type: Wrapper, description: "Create a Gradle self-download wrapper"
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Main multi-project build file
 
-rootProject.ext.MULTI_BUILD_GRADLE = """# This is a multi-project
+rootProject.ext.MULTI_BUILD_GRADLE = """// This is a multi-project
 
 configurations.all {
 }
@@ -66,8 +68,8 @@ subprojects {
 
     repositories {
         // mavenRepo name: 'Spring Release', url: 'http://repo.springsource.org/release'
-		// mavenRepo name: 'Gemstone', url: 'http://dist.gemstone.com/maven/release'
-		// mavenRepo name: 'Java.net', url: 'http://download.java.net/maven/2'
+        // mavenRepo name: 'Gemstone', url: 'http://dist.gemstone.com/maven/release'
+        // mavenRepo name: 'Java.net', url: 'http://download.java.net/maven/2'
         mavenCentral()
     }
 
@@ -84,7 +86,7 @@ subprojects {
 // global task definitions
 
 task wrapper(type: Wrapper, description: "Create a Gradle self-download wrapper") {
-	gradleVersion = "\$gradleVersion"
+    gradleVersion = "\$gradleVersion"
 }
 
 // --------------------------------------------------------------------
@@ -95,7 +97,8 @@ task wrapper(type: Wrapper, description: "Create a Gradle self-download wrapper"
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Sub project build file
 
-rootProject.ext.SUB_BUILD_GRADLE = """# This is a sub-project
+rootProject.ext.SUB_BUILD_GRADLE = """// This is a sub-project
+
 title = '%SUB_PROJECT_TITLE%'
 description = 'A description stub for %SUB_PROJECT_TITLE%'
 
@@ -106,90 +109,100 @@ sourceCompatibility = 1.6
 targetCompatibility = 1.6
 
 jar {
-		archiveName = "\${packageName}-\${version}.jar"
-		manifest {
-				attributes (
-						'Implementation-Title': "\$title",
-						'Implementation-Version': "\$version"
-				)
-		}
+        archiveName = "\${packageName}-\${version}.jar"
+        manifest {
+                attributes (
+                        'Implementation-Title': "\$title",
+                        'Implementation-Version': "\$version"
+                )
+        }
 }
 """
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Add tasks to rootProject
 
-    rootProject.tasks.add 'create-project', {
-		def userDir = new File(System.getProperty('user.dir'))
-		createProjectStructure(userDir)
-		createProjectFiles(userDir, rootProject.SINGLE_BUILD_GRADLE)
-		createFile(userDir, 'README.md', rootProject.README_MD)
-	}
+    rootProject.tasks.add 'createSingleProject'
+	rootProject.createSingleProject << {
 
-	rootProject.tasks.add 'create-multi-project', {}
-    rootProject.'create-multi-project'.ext.projectNames = null
-    rootProject.'create-multi-project' << {
+		println "executing createSingleProject"
+        File userDir = new File(System.getProperty('user.dir'))
 
-		if (projectNames == null) {
-			println "FAIL, no project names supplied in -PprojectNames=xxx,yyy,zzz property"
-			return
-		}
+        Tools.createProjectStructure(userDir)
+        Tools.createProjectFiles(userDir, rootProject, rootProject.SINGLE_BUILD_GRADLE)
+        Tools.createFile(userDir, 'README.md', rootProject.README_MD)
+    }
 
-		def userDir = new File(System.getProperty('user.dir'))
-		def projs = projectNames.split ", *"
-		projs.each { projectName->
-            println " Creating: $projectName"
-			def projectDir = new File(userDir, projectName)
-			if (!projectDir.exists()) {
-				projectDir.mkdirs()
-				createProjectStructure(projectDir)
-                def text = rootProject.SUB_BUILD_GRADLE.replaceAll("%SUB_PROJECT_TITLE%", "Project $projectName")
-                createProjectFiles(userDir, text)
-			}
-		}
+    rootProject.tasks.add 'createMultiProject'
+    rootProject.'createMultiProject'.ext.createNames = null
+    rootProject.'createMultiProject' << {
 
-		createFile(userDir, 'build.gradle', rootProject.MULTI_BUILD_GRADLE)
+		println "executing createMultiProject"
 
-        def settings = new File(userDir, 'settings.gradle')
-        projectNames.each { projectName->
-            settings << """project(":projectName") {
+        if (createNames == null) {
+            println "FAIL, no project names supplied in -PcreateNames=xxx,yyy,zzz property"
+        }
+        else {
+
+            def userDir = new File(System.getProperty('user.dir'))
+            def projs = createNames.split ", *"
+
+            projs.each { projName->
+                println " Creating sub-project $projName"
+                def projectDir = new File(userDir, projName)
+                if (!projectDir.exists()) {
+                    projectDir.mkdirs()
+                    println " creating $projectDir"
+                    Tools.createProjectStructure(projectDir)
+                    def text = rootProject.SUB_BUILD_GRADLE.replaceAll("%SUB_PROJECT_TITLE%", "Project $projName")
+                    Tools.createProjectFiles(projectDir, rootProject, text)
+                }
+            }
+
+            Tools.createFile(userDir, 'build.gradle', rootProject.MULTI_BUILD_GRADLE)
+
+            def settings = new File(userDir, 'settings.gradle')
+            createNames.each { projName->
+                settings << """project(":$projName") {
     dependencies {
         // project dependencies
     }
 }
-            """
-        }
+"""
+            }
 
-		createFile(userDir, 'README.md', rootProject.README_MD)
-	}
+            Tools.createFile(userDir, 'README.md', rootProject.README_MD)
+        }
+    }
 }
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Support functions
+class Tools {
 
-def createProjectStructure(File projectDir) {
-	['src/main/java', 'src/main/groovy', 'src/main/resources', 'src/test/java', 'src/main/groovy', 'src/main/resources']
-      .each { dirName->
-		def f = new File(projectDir, dirName)
-		if (!f.exists()) f.mkdirs()
-	}
+    def static createProjectStructure(File projectDir) {
+		def dirs = ['src/main/java', 'src/main/groovy', 'src/main/resources', 'src/test/java', 'src/main/groovy', 'src/main/resources']
+        dirs.each { dirName->
+            def f = new File(projectDir, dirName)
+            if (!f.exists()) f.mkdirs()
+        }
+    }
+
+    def static createProjectFiles(File projectDir, def project, String buildGradle) {
+        Tools.createFile(projectDir, 'gradle.properties', project.GRADLE_PROPERTIES_TEXT)
+        Tools.createFile(projectDir, 'settings.gradle', project.GRADLE_SETTINGS)
+        Tools.createFile(projectDir, 'build.gradle', buildGradle)
+    }
+
+    def static createFile(File dir, String name, String content) {
+        def f = new File(dir, name)
+        if (f.exists()) {
+            println " $f ALREADY EXISTS!"
+        }
+        else {
+            println " Creating: $f"
+            f.write(content)
+        }
+    }
 }
-
-def createProjectFiles(File projectDir, String buildGradle) {
-	createFile(projectDir, 'gradle.properties', rootProject.GRADLE_PROPERTIES_TEXT)
-	createFile(projectDir, 'settings.gradle', rootProject.GRADLE_SETTINGS)
-	createFile(projectDir, 'build.gradle', buildGradle)
-}
-
-def createFile(File dir, String name, String content) {
-	def f = new File(dir, name)
-	if (f.exists()) {
-		println " $f ALREADY EXISTS!"
-	}
-	else {
-		println " Creating: $f"
-		f.write(content)
-	}
-}
-
