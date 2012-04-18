@@ -140,7 +140,8 @@ jar {
 
 		def createNames = System.getProperty('createNames')
         if (createNames == null) {
-            println "FAIL, no project names supplied in -PcreateNames=xxx,yyy,zzz property"
+            println "FAIL, no project names supplied in 'createNames' system property"
+            println "Usage: gradle [createMultiProjects | cMP] -DcreateNames=proj1,proj2"
         }
         else {
 
