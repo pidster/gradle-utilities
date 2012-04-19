@@ -61,7 +61,7 @@ subprojects {
 
     // apply plugin: 'eclipse'         // adds support for eclipse project generation
     // apply plugin: 'idea'            // adds support for IDEA project generation
-    // apply plugin: 'java'            // adds support for java
+    apply plugin: 'java'            // adds support for java
 
     sourceCompatibility = 1.6
     targetCompatibility = 1.6
@@ -149,8 +149,8 @@ jar {
             def projs = createNames.split ", *"
 
             projs.each { projName->
-                println " Creating sub-project $projName"
-                def projectDir = new File(userDir, projName)
+                println " Creating sub-project ${rootProject.name}-$projName"
+                def projectDir = new File(userDir, "${rootProject.name}-$projName")
                 if (!projectDir.exists()) {
                     projectDir.mkdirs()
 
@@ -169,8 +169,8 @@ jar {
 			def build = new File(userDir, 'build.gradle')
 
             projs.each { projName->
-				settings << "include '$projName'\n"
-                build << """\nproject(":$projName") {
+				settings << "include '${rootProject.name}-$projName'\n"
+                build << """\nproject(":${rootProject.name}-$projName") {
     dependencies {
         // project dependencies
     }
