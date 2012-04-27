@@ -99,14 +99,10 @@ task wrapper(type: Wrapper, description: "Create a Gradle self-download wrapper"
 
 rootProject.ext.SUB_BUILD_GRADLE = """// This is a sub-project
 
-title = '%SUB_PROJECT_TITLE%'
-description = 'A description stub for %SUB_PROJECT_TITLE%'
-
-version = '0.1-SNAPSHOT'
-packageName = 'A_PACKAGE_NAME'
-
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+project.ext.title = '%SUB_PROJECT_TITLE%'
+project.ext.description = 'A description stub for %SUB_PROJECT_TITLE%'
+project.ext.version = '0.1-SNAPSHOT'
+project.ext.packageName = 'A_PACKAGE_NAME'
 
 jar {
         archiveName = "\${packageName}-\${version}.jar"
@@ -123,10 +119,20 @@ jar {
 // Add tasks to rootProject
 
     rootProject.tasks.add 'createSingleProject'
+    rootProject.'createSingleProject'.group='Project Setup'
+    rootProject.'createSingleProject'.description='Creates a single-project structure in the current directory'
+
     rootProject.tasks.add 'createMultiProject'
+    rootProject.'createMultiProject'.group='Project Setup'
+    rootProject.'createMultiProject'.description='Creates a multi-project and sub-projects in the current directory'
     rootProject.'createMultiProject'.ext.createNames = null
 
-	rootProject.createSingleProject << {
+    rootProject.tasks.add 'addMultiProject'
+    rootProject.'addMultiProject'.group='Project Setup'
+    rootProject.'addMultiProject'.description='Adds a project to an existing multi-project'
+    rootProject.'addMultiProject'.ext.projName = null
+
+    rootProject.createSingleProject << {
 
         File userDir = new File(System.getProperty('user.dir'))
 
@@ -137,15 +143,21 @@ jar {
     }
 
     rootProject.'createMultiProject' << {
+        def settings = new File(userDir, 'settings.gradle')
+        def build = new File(userDir, 'build.gradle')
+        def userDir = new File(System.getProperty('user.dir'))
 
-		def createNames = System.getProperty('createNames')
+        def createNames = System.getProperty('createNames')
+
+        if (settings.exists() || build.exists()) {
+            println "There is an existing Gradle project in this directory!\n(Can you use addMultiProject instead?)"
+        }
         if (createNames == null) {
             println "FAIL, no project names supplied in 'createNames' system property"
             println "Usage: gradle [createMultiProjects | cMP] -DcreateNames=proj1,proj2"
         }
         else {
 
-            def userDir = new File(System.getProperty('user.dir'))
             def projs = createNames.split ", *"
 
             projs.each { projName->
@@ -157,7 +169,7 @@ jar {
                     Tools.createProjectStructure(projectDir)
                     def text = rootProject.SUB_BUILD_GRADLE.replaceAll("%SUB_PROJECT_TITLE%", "Project $projName")
                     Tools.createProjectFiles(projectDir, rootProject, text)
-					Tools.writeFile(projectDir, 'gradle.properties', "# Gradle sub-project ($projName) local properties")
+                    Tools.writeFile(projectDir, 'gradle.properties', "# Gradle sub-project ($projName) local properties")
                 }
             }
 
@@ -165,11 +177,8 @@ jar {
             Tools.createFile(userDir, 'gradle.properties', project.GRADLE_PROPERTIES_TEXT)
             Tools.createFile(userDir, 'README.md', rootProject.README_MD)
 
-            def settings = new File(userDir, 'settings.gradle')
-			def build = new File(userDir, 'build.gradle')
-
             projs.each { projName->
-				settings << "include '${rootProject.name}-$projName'\n"
+                settings << "include '${rootProject.name}-$projName'\n"
                 build << """\nproject(":${rootProject.name}-$projName") {
     dependencies {
         // project dependencies
@@ -177,6 +186,43 @@ jar {
 }
 """
             }
+        }
+    }
+
+    rootProject.'addMultiProject' << {
+        def userDir = new File(System.getProperty('user.dir'))
+        def settings = new File(userDir, 'settings.gradle')
+        def build = new File(userDir, 'build.gradle')
+
+        def projName = System.getProperty('projName')
+
+        if (projName == null) {
+            println "FAIL, no project names supplied in 'projName' system property"
+            println "Usage: gradle [addMultiProject | aMP] -DprojName=proj1"
+        }
+        else if (settings.exists() || build.exists()) {
+
+            println " Creating sub-project ${rootProject.name}-$projName"
+            def projectDir = new File(userDir, "${rootProject.name}-$projName")
+            if (!projectDir.exists()) {
+                projectDir.mkdirs()
+
+                Tools.createProjectStructure(projectDir)
+                def text = rootProject.SUB_BUILD_GRADLE.replaceAll("%SUB_PROJECT_TITLE%", "Project $projName")
+                Tools.createProjectFiles(projectDir, rootProject, text)
+                Tools.writeFile(projectDir, 'gradle.properties', "# Gradle sub-project ($projName) local properties")
+            }
+
+            settings << "include '${rootProject.name}-$projName'\n"
+            build << """\nproject(":${rootProject.name}-$projName") {
+    dependencies {
+        // project dependencies
+    }
+}
+"""
+        }
+        else {
+            println "This doesn't seem like a project directory?!"
         }
     }
 }
@@ -187,7 +233,7 @@ jar {
 class Tools {
 
     def static createProjectStructure(File projectDir) {
-		def dirs = ['src/main/java', 'src/main/groovy', 'src/main/resources', 'src/test/java', 'src/test/groovy', 'src/test/resources']
+        def dirs = ['src/main/java', 'src/main/groovy', 'src/main/resources', 'src/test/java', 'src/test/groovy', 'src/test/resources']
         dirs.each { dirName->
             def f = new File(projectDir, dirName)
             if (!f.exists()) f.mkdirs()
