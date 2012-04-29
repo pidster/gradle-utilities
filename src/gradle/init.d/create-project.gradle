@@ -60,7 +60,8 @@ repositories {
 dependencies {
 }
 task wrapper(type: Wrapper, description: "Create a Gradle self-download wrapper") {
-   gradleVersion = "$gradleVersion"
+    group = 'Project Setup'
+    gradleVersion = "\$gradleVersion"
 }
 """
 
@@ -105,6 +106,7 @@ subprojects {
 // global task definitions
 
 task wrapper(type: Wrapper, description: "Create a Gradle self-download wrapper") {
+    group = 'Project Setup'
     gradleVersion = "\$gradleVersion"
 }
 
