@@ -17,7 +17,7 @@ Using the tasks is easy:
 
 ### Creating a single project
 
-    gradle [createSingleProject | sMP]
+    gradle [createSingleProject | cSP]
 
 ### Creating a multi-project project
 
@@ -25,6 +25,6 @@ Using the tasks is easy:
 
 ### Adding a sub-project to an existing multi-project
 
-    gradle [addMultiProject | aMP} -DprojName=<subproj>
+    gradle [addMultiProject | aMP] -DprojName=<subproj>
 
 

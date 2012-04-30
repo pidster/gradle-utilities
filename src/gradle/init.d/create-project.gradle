@@ -163,7 +163,7 @@ jar {
         Tools.createFile(userDir, 'gradle.properties', project.GRADLE_PROPERTIES_TEXT)
     }
 
-    rootProject.'createMultiProject' << {
+    rootProject.createMultiProject << {
         def settings = new File(userDir, 'settings.gradle')
         def build = new File(userDir, 'build.gradle')
         def userDir = new File(System.getProperty('user.dir'))
@@ -173,7 +173,7 @@ jar {
         if (settings.exists() || build.exists()) {
             println "There is an existing Gradle project in this directory!\n(Can you use addMultiProject instead?)"
         }
-        if (createNames == null) {
+        if (!createNames) {
             println "FAIL, no project names supplied in 'createNames' system property"
             println "Usage: gradle [createMultiProjects | cMP] -DcreateNames=proj1,proj2"
         }
@@ -210,14 +210,14 @@ jar {
         }
     }
 
-    rootProject.'addMultiProject' << {
+    rootProject.addMultiProject << {
         def userDir = new File(System.getProperty('user.dir'))
         def settings = new File(userDir, 'settings.gradle')
         def build = new File(userDir, 'build.gradle')
 
         def projName = System.getProperty('projName')
 
-        if (projName == null) {
+        if (!projName) {
             println "FAIL, no project names supplied in 'projName' system property"
             println "Usage: gradle [addMultiProject | aMP] -DprojName=proj1"
         }
@@ -253,7 +253,7 @@ jar {
 // Support functions
 class Tools {
 
-    def static createProjectStructure(File projectDir) {
+    static createProjectStructure(File projectDir) {
         def dirs = ['src/main/java', 'src/main/groovy', 'src/main/resources', 'src/test/java', 'src/test/groovy', 'src/test/resources']
         dirs.each { dirName->
             def f = new File(projectDir, dirName)
@@ -261,27 +261,27 @@ class Tools {
         }
     }
 
-    def static createProjectFiles(File projectDir, def project, String buildGradle) {
+    static createProjectFiles(File projectDir, def project, String buildGradle) {
         Tools.createFile(projectDir, 'settings.gradle', project.GRADLE_SETTINGS)
         Tools.createFile(projectDir, 'gradle.properties', '')
         Tools.createFile(projectDir, 'build.gradle', buildGradle)
     }
 
-    def static createFile(File dir, String name, String content) {
+    static createFile(File dir, String name, String content) {
         def f = new File(dir, name)
         if (f.exists()) {
             println "  EXISTS! $f"
         }
         else {
             println "  creating $f"
-            f.write(content)
+            f.write(content, 'UTF-8')
         }
     }
 
-    def static writeFile(File dir, String name, String content) {
+    static writeFile(File dir, String name, String content) {
         def f = new File(dir, name)
         if (f.exists()) {
-            f.write(content)
+            f.write(content, 'UTF-8')
             println "  writing $f"
         }
         else {
