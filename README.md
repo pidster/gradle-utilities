@@ -8,7 +8,7 @@ The create-projects.gradle script should be placed like so:
 
     ~/.gradle/init.d/create-projects.gradle
 
-This will enable the tasks createSingleProject (cSP), createMultiProject (cMP) 
+This will enable the tasks createSingleProject (cSP), createMultiProject (cMP)
 and addMultiProject (aMP) in all projects.
 
 ## Usage
