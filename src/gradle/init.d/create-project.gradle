@@ -164,10 +164,9 @@ jar {
     }
 
     rootProject.createMultiProject << {
-        File userDir = new File(System.getProperty('user.dir'))
+        def userDir = new File(System.getProperty('user.dir'))
         def settings = new File(userDir, 'settings.gradle')
         def build = new File(userDir, 'build.gradle')
-        def userDir = new File(System.getProperty('user.dir'))
 
         def createNames = System.getProperty('createNames')
 
