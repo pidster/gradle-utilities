@@ -160,7 +160,7 @@ jar {
         Tools.createProjectStructure(userDir)
         Tools.createProjectFiles(userDir, rootProject, rootProject.SINGLE_BUILD_GRADLE)
         Tools.createFile(userDir, 'README.md', rootProject.README_MD)
-        Tools.createFile(userDir, 'gradle.properties', project.GRADLE_PROPERTIES_TEXT)
+        // Tools.createFile(userDir, 'gradle.properties', project.GRADLE_PROPERTIES_TEXT)
     }
 
     rootProject.createMultiProject << {
